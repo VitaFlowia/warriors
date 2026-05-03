@@ -19,6 +19,7 @@ export type Hero = {
   xp: number;
   xpNextLevel: number;
   cardImage: string;
+  fullImage: string;
 };
 
 export const heroes: Hero[] = [
@@ -38,7 +39,8 @@ export const heroes: Hero[] = [
     equipment: ['Espada Curta', 'Escudo de Madeira'],
     xp: 0,
     xpNextLevel: 100,
-    cardImage: '/images/cards/heroes/rurik-sa-ferro.png'
+    cardImage: '/images/cards/heroes/rurik-sa-ferro.png',
+    fullImage: '/images/escolher_personagens/Rurik_Sa_Ferro.png'
   },
   {
     id: 'yara-da-nevoa',
@@ -56,7 +58,8 @@ export const heroes: Hero[] = [
     equipment: ['Cajado Simples', 'Grimório de Névoa'],
     xp: 0,
     xpNextLevel: 100,
-    cardImage: '/images/cards/heroes/yara-da-nevoa.png'
+    cardImage: '/images/cards/heroes/yara-da-nevoa.png',
+    fullImage: '/images/escolher_personagens/Yara_da_Nevoa.png'
   },
   {
     id: 'naira-olhos-de-nevoa',
@@ -74,7 +77,8 @@ export const heroes: Hero[] = [
     equipment: ['Arco Longo', 'Adaga de Caçadora'],
     xp: 0,
     xpNextLevel: 100,
-    cardImage: '/images/cards/heroes/naira-olhos-de-nevoa.png'
+    cardImage: '/images/cards/heroes/naira-olhos-de-nevoa.png',
+    fullImage: '/images/escolher_personagens/Naira_Olhos_de_Nevoa.png'
   },
   {
     id: 'irma-joana-de-brumas',
@@ -92,7 +96,8 @@ export const heroes: Hero[] = [
     equipment: ['Cetro Sagrado', 'Símbolo de Brumas'],
     xp: 0,
     xpNextLevel: 100,
-    cardImage: '/images/cards/heroes/irma-joana-de-brumas.png'
+    cardImage: '/images/cards/heroes/irma-joana-de-brumas.png',
+    fullImage: '/images/escolher_personagens/Irma_Joana_de_Brunas.png'
   },
   {
     id: 'sir-alvaro-lumiar',
@@ -110,7 +115,8 @@ export const heroes: Hero[] = [
     equipment: ['Espada Consagrada', 'Escudo Solar'],
     xp: 0,
     xpNextLevel: 100,
-    cardImage: '/images/cards/heroes/sir-alvaro-lumiar.png'
+    cardImage: '/images/cards/heroes/sir-alvaro-lumiar.png',
+    fullImage: '/images/escolher_personagens/Sir_Alvaro_Lumiar.png'
   },
   {
     id: 'vico-sombras',
@@ -128,7 +134,8 @@ export const heroes: Hero[] = [
     equipment: ['Adagas Gêmeas', 'Kit de Gazuas'],
     xp: 0,
     xpNextLevel: 100,
-    cardImage: '/images/cards/heroes/vico-sombras.png'
+    cardImage: '/images/cards/heroes/vico-sombras.png',
+    fullImage: '/images/escolher_personagens/Vico_Sombras.png'
   },
   {
     id: 'sa-leo-das-cancoes',
@@ -146,6 +153,7 @@ export const heroes: Hero[] = [
     equipment: ['Alaúde de Bruma', 'Flauta do Cais'],
     xp: 0,
     xpNextLevel: 100,
-    cardImage: '/images/cards/heroes/sa-leo-das-cancoes.png'
+    cardImage: '/images/cards/heroes/sa-leo-das-cancoes.png',
+    fullImage: '/images/escolher_personagens/Sa_Leo_das_Cancoes.png'
   }
 ];

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { IntroVideo } from '@/components/game/IntroVideo';
 import { BattleScene } from '@/components/game/BattleScene';
 import { ActionPanel } from '@/components/game/ActionPanel';
@@ -20,6 +21,7 @@ import { InventoryPanel } from '@/components/game/InventoryPanel';
 type GameState = 'intro' | 'menu' | 'village' | 'transition' | 'battle';
 
 export default function Home() {
+  const router = useRouter();
   const [gameState, setGameState] = useState<GameState>('intro');
   const [destination, setDestination] = useState<string>('');
   const [activeHeroes, setActiveHeroes] = useState<Hero[]>([]);
@@ -229,11 +231,66 @@ export default function Home() {
     } else if (activeEnemies.some(e => e.enemy.id === actorId && e.currentHp <= 0)) {
       // Dead enemy turn, skip
       nextTurn();
+    } else {
+      // Ghost Mode (Auto-play for other Heroes / Missing Players)
+      const isHero = activeHeroes.some(h => h.id === actorId && h.hp > 0);
+      if (isHero && actorId !== myHeroId && myHeroId !== null) {
+        const hero = activeHeroes.find(h => h.id === actorId);
+        if (!hero) return;
+
+        const aliveEnemies = activeEnemies.filter(e => e.currentHp > 0);
+        if (aliveEnemies.length === 0) return;
+        const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+
+        setTimeout(async () => {
+          addLog(`${hero.name} (Modo Fantasma) avança contra ${target.enemy.name}...`, 'narrative');
+          
+          setIsRolling(true);
+          setDiceResult(null);
+          await new Promise(r => setTimeout(r, 3500));
+          
+          const result = executeAttack({
+            actor: hero.name,
+            target: target.enemy.name,
+            attributeBonus: hero.attributes.forca,
+            weaponDamage: 4,
+            defenseBonus: target.enemy.attributes.defesa
+          });
+
+          setIsRolling(false);
+          setDiceResult(result.diceResult);
+          
+          setTimeout(async () => {
+            setDiceResult(null);
+            addLog(result.logMessage, 'combat');
+            
+            if (result.damageDealt > 0) {
+              setActiveEnemies(prev => prev.map(e => 
+                e.enemy.id === target.enemy.id 
+                  ? { ...e, currentHp: Math.max(0, e.currentHp - result.damageDealt) } 
+                  : e
+              ));
+            }
+
+            fetch('/api/ai/narrate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ actionContext: result.logMessage })
+            })
+            .then(res => res.json())
+            .then(data => { if (data.narrative) addLog(data.narrative, 'narrative'); })
+            .catch(console.error);
+
+            nextTurn();
+          }, 4500);
+
+        }, 1500);
+      }
     }
-  }, [currentTurnIndex, gameState]);
+  }, [currentTurnIndex, gameState, myHeroId]);
 
   if (gameState === 'intro') {
-    return <IntroVideo onComplete={() => setGameState('menu')} />;
+    return <IntroVideo onComplete={() => router.push('/login')} />;
   }
 
   if (gameState === 'menu') {

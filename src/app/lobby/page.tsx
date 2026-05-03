@@ -9,6 +9,7 @@ export default function Lobby() {
   const [user, setUser] = useState<any>(null);
   const [activePlayers, setActivePlayers] = useState<any[]>([]);
   const [selectedHeroId, setSelectedHeroId] = useState<string>('');
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -116,30 +117,62 @@ export default function Lobby() {
             )}
           </div>
 
-          <h2 className="text-lg font-bold text-primary mb-4 text-left border-t border-border/50 pt-4">Escolha seu Herói para esta Jornada:</h2>
-          <div className="flex gap-2 overflow-x-auto pb-4 mb-6 custom-scrollbar">
-            {heroes.map(hero => (
-              <button
-                key={hero.id}
-                onClick={() => handleSelectHero(hero.id)}
-                className={`min-w-[100px] flex flex-col items-center gap-2 p-2 rounded-lg transition-all border-2 
-                  ${selectedHeroId === hero.id ? 'border-green-500 bg-green-900/30 scale-105' : 'border-transparent hover:border-primary/50 hover:bg-primary/10'}`}
+          <h2 className="text-lg font-bold text-primary mb-4 text-center border-t border-border/50 pt-4">Escolha seu Herói para esta Jornada:</h2>
+          
+          <div className="relative w-full max-w-[400px] mx-auto h-[600px] rounded-2xl border border-primary/20 bg-black/50 overflow-hidden shadow-2xl flex items-center justify-center">
+            <img 
+              src={heroes[carouselIndex].fullImage} 
+              alt={heroes[carouselIndex].name} 
+              className="w-full h-full object-contain pointer-events-none"
+            />
+            
+            {/* Carousel Controls */}
+            {carouselIndex > 0 && (
+              <button 
+                onClick={() => setCarouselIndex(prev => prev - 1)}
+                className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-blue-400 hover:text-blue-300 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] transition-all hover:scale-110 z-20"
               >
-                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/50">
-                  <img src={hero.cardImage} alt={hero.name} className="w-full h-full object-cover" />
+                <div className="w-10 h-10 rounded-full border-2 border-blue-400 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 </div>
-                <span className="text-xs font-bold text-center text-foreground">{hero.name}</span>
+                <span className="text-[10px] font-bold mt-1 uppercase tracking-widest">Voltar</span>
               </button>
-            ))}
-          </div>
+            )}
 
-          <div className="flex justify-center">
-            <button 
-              onClick={joinMatch}
-              className="px-10 py-4 bg-primary text-primary-foreground font-bold uppercase tracking-widest rounded-lg hover:bg-primary/80 transition-transform hover:scale-105 shadow-[0_0_20px_rgba(197,168,128,0.4)]"
-            >
-              Ir para o Mapa
-            </button>
+            {carouselIndex < heroes.length - 1 && (
+              <button 
+                onClick={() => setCarouselIndex(prev => prev + 1)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-blue-400 hover:text-blue-300 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] transition-all hover:scale-110 z-20"
+              >
+                <div className="w-10 h-10 rounded-full border-2 border-blue-400 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </div>
+                <span className="text-[10px] font-bold mt-1 uppercase tracking-widest">Próximo</span>
+              </button>
+            )}
+
+            {/* Neon Golden Select Button overlayed on the image */}
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-[80%] flex flex-col gap-4">
+              <button 
+                onClick={() => handleSelectHero(heroes[carouselIndex].id)}
+                className={`w-full py-4 text-transparent font-bold uppercase tracking-widest rounded-xl transition-all duration-300 border-4 relative overflow-hidden group
+                  ${selectedHeroId === heroes[carouselIndex].id ? 'border-green-400 shadow-[0_0_40px_rgba(74,222,128,0.9)] bg-green-500/20' : 'border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.8)] hover:shadow-[0_0_50px_rgba(250,204,21,1)] bg-transparent'}`}
+              >
+                {/* The text is rendered via inset shadow/glow on the border, but we need text to see it, so we color it neon */}
+                <span className={`relative z-10 text-2xl font-black ${selectedHeroId === heroes[carouselIndex].id ? 'text-green-300 drop-shadow-[0_0_10px_rgba(74,222,128,1)]' : 'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,1)]'}`}>
+                  {selectedHeroId === heroes[carouselIndex].id ? 'HERÓI VINCULADO!' : 'ESCOLHER'}
+                </span>
+              </button>
+              
+              {selectedHeroId === heroes[carouselIndex].id && (
+                <button 
+                  onClick={joinMatch}
+                  className="w-full px-10 py-4 bg-primary text-primary-foreground text-xl font-bold uppercase tracking-widest rounded-lg hover:bg-primary/80 transition-transform hover:scale-105 shadow-[0_0_20px_rgba(197,168,128,0.4)] animate-bounce"
+                >
+                  Ir para o Mapa
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

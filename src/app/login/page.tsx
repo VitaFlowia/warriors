@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 
 export default function Login() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,6 +17,12 @@ export default function Login() {
     setLoading(true);
     setError('');
 
+    if (!name.trim()) {
+      setError('Por favor, informe como deseja ser chamado.');
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -25,6 +32,7 @@ export default function Login() {
       setError('Credenciais inválidas. Tente novamente.');
       setLoading(false);
     } else {
+      localStorage.setItem('my_name', name);
       router.push('/lobby');
     }
   };
@@ -41,6 +49,17 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Seu Nome (Como será visto na mesa)</label>
+            <input 
+              type="text" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-background border border-border rounded px-4 py-2 text-foreground focus:outline-none focus:border-primary font-bold text-lg"
+              placeholder="Ex: Tio João, Davi, Leo..."
+              required
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">E-mail</label>
             <input 

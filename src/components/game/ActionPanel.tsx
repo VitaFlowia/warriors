@@ -25,18 +25,19 @@ export function ActionPanel({ hero, onAction, disabled }: ActionPanelProps) {
   return (
     <div className="bg-secondary/50 p-4 border-t border-border mt-auto backdrop-blur-md">
       <h3 className="text-primary font-bold mb-3">{hero.name} - Suas Ações</h3>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-4">
         <button 
           onClick={() => handleActionClick('attack')} 
           disabled={disabled || clickedAction === 'attack'}
-          className={`flex-1 min-w-[120px] py-3 px-4 font-bold rounded-lg uppercase tracking-widest text-sm transition-all duration-200 border-2 
+          className={`flex-1 min-w-[120px] py-4 px-4 font-black rounded-xl uppercase tracking-widest text-sm transition-all duration-300 border-2 relative overflow-hidden group
             ${clickedAction === 'attack' 
-              ? 'bg-green-600 border-green-400 scale-95 shadow-[0_0_20px_rgba(74,222,128,0.8)] text-white' 
-              : 'bg-red-900 border-red-700 text-red-100 hover:bg-red-800 hover:shadow-[0_0_15px_rgba(255,0,0,0.5)] active:scale-95'
+              ? 'bg-yellow-400 border-yellow-200 scale-95 shadow-[0_0_30px_rgba(250,204,21,1)] text-yellow-900' 
+              : 'bg-red-700/80 border-red-500 text-red-100 hover:bg-red-600 hover:border-red-400 hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(239,68,68,0.8)] active:scale-95'
             } 
-            disabled:opacity-50 disabled:cursor-not-allowed`}
+            ${disabled && clickedAction !== 'attack' ? 'opacity-40 grayscale cursor-not-allowed' : ''}`}
         >
-          {clickedAction === 'attack' ? 'Atacando...' : 'Atacar'}
+          {clickedAction !== 'attack' && <div className="absolute inset-0 bg-gradient-to-t from-red-900/50 to-transparent pointer-events-none" />}
+          <span className="relative z-10">{clickedAction === 'attack' ? 'ATACANDO!!!' : 'ATACAR'}</span>
         </button>
         
         {hero.skills.map((skill, idx) => (
@@ -45,29 +46,31 @@ export function ActionPanel({ hero, onAction, disabled }: ActionPanelProps) {
             onClick={() => handleActionClick('skill', skill.name)}
             disabled={disabled || hero.mana < skill.cost || clickedAction === skill.name}
             title={`${skill.description} (Custo: ${skill.cost} MP)`}
-            className={`flex-1 min-w-[140px] py-3 px-4 font-bold rounded-lg flex flex-col items-center justify-center text-xs uppercase tracking-wider transition-all duration-200 border-2 
+            className={`flex-1 min-w-[140px] py-4 px-4 font-bold rounded-xl flex flex-col items-center justify-center text-xs uppercase tracking-wider transition-all duration-300 border-2 relative overflow-hidden group
               ${clickedAction === skill.name
-                ? 'bg-green-600 border-green-400 scale-95 shadow-[0_0_20px_rgba(74,222,128,0.8)] text-white'
-                : 'bg-purple-900 border-purple-700 text-purple-100 hover:bg-purple-800 hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] active:scale-95'
+                ? 'bg-yellow-400 border-yellow-200 scale-95 shadow-[0_0_30px_rgba(250,204,21,1)] text-yellow-900'
+                : 'bg-purple-700/80 border-purple-500 text-purple-100 hover:bg-purple-600 hover:border-purple-400 hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(168,85,247,0.8)] active:scale-95'
               } 
-              disabled:opacity-50 disabled:cursor-not-allowed`}
+              ${(disabled || hero.mana < skill.cost) && clickedAction !== skill.name ? 'opacity-40 grayscale cursor-not-allowed' : ''}`}
           >
-            <span>{clickedAction === skill.name ? 'Conjurando...' : skill.name}</span>
-            <span className="text-[10px] opacity-70 font-normal mt-1 text-center">{skill.cost} MP</span>
+            {clickedAction !== skill.name && <div className="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-transparent pointer-events-none" />}
+            <span className="relative z-10 font-black">{clickedAction === skill.name ? 'CONJURANDO!!!' : skill.name}</span>
+            <span className="relative z-10 text-[10px] text-purple-200 font-bold mt-1 bg-black/40 px-2 py-0.5 rounded-full">{skill.cost} MP</span>
           </button>
         ))}
 
         <button 
           onClick={() => handleActionClick('defend')} 
           disabled={disabled || clickedAction === 'defend'}
-          className={`flex-1 min-w-[120px] py-3 px-4 font-bold rounded-lg uppercase tracking-widest text-sm transition-all duration-200 border-2 
+          className={`flex-1 min-w-[120px] py-4 px-4 font-black rounded-xl uppercase tracking-widest text-sm transition-all duration-300 border-2 relative overflow-hidden group
             ${clickedAction === 'defend'
-              ? 'bg-green-600 border-green-400 scale-95 shadow-[0_0_20px_rgba(74,222,128,0.8)] text-white'
-              : 'bg-blue-900 border-blue-700 text-blue-100 hover:bg-blue-800 hover:shadow-[0_0_15px_rgba(0,100,255,0.5)] active:scale-95'
+              ? 'bg-yellow-400 border-yellow-200 scale-95 shadow-[0_0_30px_rgba(250,204,21,1)] text-yellow-900'
+              : 'bg-blue-700/80 border-blue-500 text-blue-100 hover:bg-blue-600 hover:border-blue-400 hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(59,130,246,0.8)] active:scale-95'
             } 
-            disabled:opacity-50 disabled:cursor-not-allowed`}
+            ${disabled && clickedAction !== 'defend' ? 'opacity-40 grayscale cursor-not-allowed' : ''}`}
         >
-          {clickedAction === 'defend' ? 'Defendendo...' : 'Defender'}
+          {clickedAction !== 'defend' && <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent pointer-events-none" />}
+          <span className="relative z-10">{clickedAction === 'defend' ? 'DEFENDENDO!!!' : 'DEFENDER'}</span>
         </button>
       </div>
     </div>
