@@ -6,6 +6,7 @@ export type CombatAction = {
   attributeBonus: number;
   weaponDamage: number;
   defenseBonus: number;
+  preRolledDice?: number;
 };
 
 export type CombatResult = {
@@ -15,7 +16,7 @@ export type CombatResult = {
 };
 
 export function executeAttack(action: CombatAction): CombatResult {
-  const dice = rollD20(action.attributeBonus);
+  const dice = rollD20(action.attributeBonus, action.preRolledDice);
 
   if (dice.isCriticalFailure) {
     return {

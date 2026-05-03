@@ -10,8 +10,8 @@ export type DiceResult = {
  * Rolls a d20 and calculates success based on attribute bonus.
  * >= 12 is SUCCESS, 1-3 is CRITICAL FAILURE, 20 is CRITICAL SUCCESS.
  */
-export function rollD20(attributeBonus: number = 0): DiceResult {
-  const roll = Math.floor(Math.random() * 20) + 1;
+export function rollD20(attributeBonus: number = 0, preRolledValue?: number): DiceResult {
+  const roll = preRolledValue !== undefined ? preRolledValue : Math.floor(Math.random() * 20) + 1;
   const total = roll + attributeBonus;
 
   const isCriticalSuccess = roll === 20;

@@ -7,6 +7,7 @@ import { BattleScene } from '@/components/game/BattleScene';
 import { ActionPanel } from '@/components/game/ActionPanel';
 import { BattleLog, LogEntry } from '@/components/game/BattleLog';
 import { DiceRoller } from '@/components/game/DiceRoller';
+import { D20Interactive } from '@/components/game/D20Interactive';
 import { heroes, Hero } from '@/data/heroes';
 import { enemies, Enemy } from '@/data/enemies';
 import { executeAttack, CombatResult } from '@/game-engine/combat';
@@ -39,6 +40,8 @@ export default function Home() {
   // Player State
   const [myHeroId, setMyHeroId] = useState<string | null>(null);
   const [showTurnBanner, setShowTurnBanner] = useState(false);
+  const [pendingAction, setPendingAction] = useState<any>(null);
+  const [isInteractiveRolling, setIsInteractiveRolling] = useState(false);
 
   useEffect(() => {
     // Only access localStorage on client
@@ -108,6 +111,20 @@ export default function Home() {
 
     addLog(`${actor.name} prepara ${skillName || 'um ataque'} contra ${target.enemy.name}...`, 'narrative');
 
+    // Se for o jogador atual, abre o dado interativo 3D
+    if (actorId === myHeroId) {
+      setPendingAction({
+        actor: actor.name,
+        target: target.enemy.name,
+        attributeBonus: actor.attributes.forca,
+        weaponDamage: 4, // Mock weapon
+        defenseBonus: target.enemy.attributes.defesa
+      });
+      setIsInteractiveRolling(true);
+      return; // Interrompe e espera o usuário jogar o dado
+    }
+
+    // Se não for (embora agora tenhamos o Ghost mode separado, fallback pro 2D normal)
     setIsRolling(true);
     setDiceResult(null);
 
@@ -152,6 +169,45 @@ export default function Home() {
           addLog(data.narrative, 'narrative');
         }
       })
+      .catch(console.error);
+
+      nextTurn();
+    }, 4500);
+  };
+
+  const handleInteractiveRollComplete = (rollValue: number) => {
+    setIsInteractiveRolling(false);
+    setIsRolling(true); // Abre o visualizador de resultado 2D (DiceRoller) para mostrar o número que ele tirou na tela inteira
+    
+    // Executa o combate forçando o valor que saiu no dado 3D físico
+    const result = executeAttack({
+      ...pendingAction,
+      preRolledDice: rollValue
+    });
+    
+    setPendingAction(null);
+    setIsRolling(false);
+    setDiceResult(result.diceResult);
+    
+    setTimeout(async () => {
+      setDiceResult(null);
+      addLog(result.logMessage, 'combat');
+      
+      if (result.damageDealt > 0) {
+        setActiveEnemies(prev => prev.map(e => 
+          e.enemy.id === pendingAction.target // Mock: here pendingAction.target is just the name, but for MVP it works since we know it's target[0]
+            ? { ...e, currentHp: Math.max(0, e.currentHp - result.damageDealt) } 
+            : e
+        ));
+      }
+
+      fetch('/api/ai/narrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actionContext: result.logMessage })
+      })
+      .then(res => res.json())
+      .then(data => { if (data.narrative) addLog(data.narrative, 'narrative'); })
       .catch(console.error);
 
       nextTurn();
@@ -382,6 +438,11 @@ export default function Home() {
             <h2 className="text-3xl font-black text-white uppercase tracking-widest animate-pulse">É A SUA VEZ!</h2>
           </div>
         </div>
+      )}
+
+      {/* 3D Interactive Dice Overlay */}
+      {isInteractiveRolling && (
+        <D20Interactive onRollComplete={handleInteractiveRollComplete} isRolling={false} />
       )}
     </main>
   );
