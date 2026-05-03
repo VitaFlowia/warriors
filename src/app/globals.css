@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-sapires-dark: #0a0f1a;
+  --color-sapires-fog: #2c3e50;
+  --color-sapires-gold: #c5a880;
+  --color-sapires-blood: #8b0000;
+  --color-sapires-ocean: #1a365d;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 220 50% 5%;
+    --foreground: 210 40% 98%;
+
+    --card: 220 40% 10%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 220 40% 10%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 38 40% 64%; /* Gold */
+    --primary-foreground: 220 50% 5%;
+ 
+    --secondary: 210 40% 20%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 210 40% 20%;
+    --muted-foreground: 215 20% 65%;
+ 
+    --accent: 0 100% 27%; /* Blood Red */
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 210 40% 20%;
+    --input: 210 40% 20%;
+    --ring: 38 40% 64%;
+ 
+    --radius: 0.5rem;
   }
 }
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+ 
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: Arial, Helvetica, sans-serif;
+  }
 }

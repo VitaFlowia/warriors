@@ -1,65 +1,331 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { IntroVideo } from '@/components/game/IntroVideo';
+import { BattleScene } from '@/components/game/BattleScene';
+import { ActionPanel } from '@/components/game/ActionPanel';
+import { BattleLog, LogEntry } from '@/components/game/BattleLog';
+import { DiceRoller } from '@/components/game/DiceRoller';
+import { heroes, Hero } from '@/data/heroes';
+import { enemies, Enemy } from '@/data/enemies';
+import { executeAttack, CombatResult } from '@/game-engine/combat';
+import { DiceResult } from '@/game-engine/dice';
+import { playTurnSound } from '@/lib/audio';
+
+import { VillageScene } from '@/components/game/VillageScene';
+import { MapTransition } from '@/components/game/MapTransition';
+import { ChatPanel } from '@/components/game/ChatPanel';
+import { InventoryPanel } from '@/components/game/InventoryPanel';
+
+type GameState = 'intro' | 'menu' | 'village' | 'transition' | 'battle';
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+  const [gameState, setGameState] = useState<GameState>('intro');
+  const [destination, setDestination] = useState<string>('');
+  const [activeHeroes, setActiveHeroes] = useState<Hero[]>([]);
+  const [activeEnemies, setActiveEnemies] = useState<{enemy: Enemy, currentHp: number}[]>([]);
+  
+  // Battle State
+  const [turnOrder, setTurnOrder] = useState<string[]>([]);
+  const [currentTurnIndex, setCurrentTurnIndex] = useState(0);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  
+  // Dice State
+  const [diceResult, setDiceResult] = useState<DiceResult | null>(null);
+  const [isRolling, setIsRolling] = useState(false);
+
+  // Player State
+  const [myHeroId, setMyHeroId] = useState<string | null>(null);
+  const [showTurnBanner, setShowTurnBanner] = useState(false);
+
+  useEffect(() => {
+    // Only access localStorage on client
+    if (typeof window !== 'undefined') {
+      setMyHeroId(localStorage.getItem('my_hero_id'));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (gameState === 'battle' && turnOrder.length > 0) {
+      const currentActorId = turnOrder[currentTurnIndex];
+      if (currentActorId === myHeroId) {
+        playTurnSound();
+        setShowTurnBanner(true);
+        setTimeout(() => setShowTurnBanner(false), 3000);
+      }
+    }
+  }, [currentTurnIndex, gameState, myHeroId, turnOrder]);
+
+  const addLog = (message: string, type: LogEntry['type']) => {
+    setLogs(prev => [...prev, { id: Math.random().toString(), message, type, timestamp: new Date() }]);
+  };
+
+  const enterVillage = () => {
+    setGameState('village');
+  };
+
+  const handleVillageClick = (id: string) => {
+    if (id === 'battle') {
+      setDestination('Ruas em Chamas');
+      setGameState('transition');
+    } else {
+      // Feedback imediato para o usuário
+      alert(`Você se dirigiu para: ${id.toUpperCase()}. \n\n(A funcionalidade completa deste prédio será ativada na próxima atualização!)`);
+    }
+  };
+
+  const startGame = () => {
+    setGameState('battle');
+    // MVP: Select 4 heroes and 3 Goblins
+    const selectedHeroes = heroes.slice(0, 4);
+    const selectedEnemies = [
+      { enemy: { ...enemies[0], id: 'goblin-1' }, currentHp: enemies[0].maxHp },
+      { enemy: { ...enemies[0], id: 'goblin-2' }, currentHp: enemies[0].maxHp },
+      { enemy: { ...enemies[0], id: 'goblin-3' }, currentHp: enemies[0].maxHp },
+    ];
+    
+    setActiveHeroes(selectedHeroes);
+    setActiveEnemies(selectedEnemies);
+    
+    const order = [...selectedHeroes.map(h => h.id), ...selectedEnemies.map(e => e.enemy.id)];
+    setTurnOrder(order);
+    setCurrentTurnIndex(0);
+    
+    addLog('A batalha em Ruas em Chamas começou!', 'system');
+  };
+
+  const handleAction = async (actionType: string, skillName?: string) => {
+    const actorId = turnOrder[currentTurnIndex];
+    const actor = activeHeroes.find(h => h.id === actorId);
+    if (!actor) return; // Inimigos jogam sozinhos depois
+
+    // Target (always first alive enemy for MVP)
+    const aliveEnemies = activeEnemies.filter(e => e.currentHp > 0);
+    if (aliveEnemies.length === 0) return;
+    const target = aliveEnemies[0];
+
+    addLog(`${actor.name} prepara ${skillName || 'um ataque'} contra ${target.enemy.name}...`, 'narrative');
+
+    setIsRolling(true);
+    setDiceResult(null);
+
+    // Simulate dice roll delay (Aumentado para suspense das crianças)
+    await new Promise(r => setTimeout(r, 3500));
+    
+    const result = executeAttack({
+      actor: actor.name,
+      target: target.enemy.name,
+      attributeBonus: actor.attributes.forca,
+      weaponDamage: 4, // Mock weapon
+      defenseBonus: target.enemy.attributes.defesa
+    });
+
+    setIsRolling(false);
+    setDiceResult(result.diceResult);
+    
+    // Auto hide dice after 4.5s
+    setTimeout(async () => {
+      setDiceResult(null);
+      
+      // Mostrar log técnico primeiro
+      addLog(result.logMessage, 'combat');
+      
+      if (result.damageDealt > 0) {
+        setActiveEnemies(prev => prev.map(e => 
+          e.enemy.id === target.enemy.id 
+            ? { ...e, currentHp: Math.max(0, e.currentHp - result.damageDealt) } 
+            : e
+        ));
+      }
+
+      // Invocar a IA Mestre para narrar o golpe (sem travar o fluxo principal)
+      fetch('/api/ai/narrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actionContext: result.logMessage })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.narrative) {
+          addLog(data.narrative, 'narrative');
+        }
+      })
+      .catch(console.error);
+
+      nextTurn();
+    }, 4500);
+  };
+
+  const nextTurn = () => {
+    setCurrentTurnIndex(prev => {
+      const next = (prev + 1) % turnOrder.length;
+      return next;
+    });
+  };
+
+  // Bot logic for enemies
+  useEffect(() => {
+    if (gameState !== 'battle') return;
+    
+    const actorId = turnOrder[currentTurnIndex];
+    const isEnemy = activeEnemies.some(e => e.enemy.id === actorId && e.currentHp > 0);
+    
+    if (isEnemy) {
+      const enemy = activeEnemies.find(e => e.enemy.id === actorId);
+      if (!enemy) return;
+      
+      const aliveHeroes = activeHeroes.filter(h => h.hp > 0);
+      if (aliveHeroes.length === 0) return;
+      const target = aliveHeroes[Math.floor(Math.random() * aliveHeroes.length)];
+
+      setTimeout(async () => {
+        addLog(`${enemy.enemy.name} avança contra ${target.name}!`, 'narrative');
+        
+        setIsRolling(true);
+        setDiceResult(null);
+        await new Promise(r => setTimeout(r, 3500));
+        
+        const result = executeAttack({
+          actor: enemy.enemy.name,
+          target: target.name,
+          attributeBonus: enemy.enemy.attributes.forca,
+          weaponDamage: 2,
+          defenseBonus: target.attributes.defesa
+        });
+
+        setIsRolling(false);
+        setDiceResult(result.diceResult);
+        
+        setTimeout(async () => {
+          setDiceResult(null);
+          
+          // Mostrar log técnico primeiro
+          addLog(result.logMessage, 'combat');
+          
+          if (result.damageDealt > 0) {
+            setActiveHeroes(prev => prev.map(h => 
+              h.id === target.id ? { ...h, hp: Math.max(0, h.hp - result.damageDealt) } : h
+            ));
+          }
+
+          // Invocar IA Mestre para narrativa do monstro
+          fetch('/api/ai/narrate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actionContext: result.logMessage })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.narrative) {
+              addLog(data.narrative, 'narrative');
+            }
+          })
+          .catch(console.error);
+
+          nextTurn();
+        }, 4000);
+
+      }, 1000);
+    } else if (activeEnemies.some(e => e.enemy.id === actorId && e.currentHp <= 0)) {
+      // Dead enemy turn, skip
+      nextTurn();
+    }
+  }, [currentTurnIndex, gameState]);
+
+  if (gameState === 'intro') {
+    return <IntroVideo onComplete={() => setGameState('menu')} />;
+  }
+
+  if (gameState === 'menu') {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center bg-[url('/images/backgrounds/porto-das-brumas.png')] bg-cover bg-center">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div className="z-10 text-center space-y-8">
+          <img src="/images/logo/sapires-warriors-logo.png" alt="Sá Pires Warriors" className="max-w-md mx-auto drop-shadow-2xl" />
+          <h1 className="text-4xl font-bold text-primary tracking-widest uppercase">Porto das Brumas</h1>
+          <div className="space-x-4">
+            <button onClick={enterVillage} className="px-8 py-4 bg-primary text-primary-foreground font-bold rounded-md hover:bg-primary/80 transition-colors text-xl shadow-[0_0_15px_rgba(197,168,128,0.5)]">
+              Entrar na Vila
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (gameState === 'village') {
+    return (
+      <div className="min-h-screen bg-sapires-dark flex flex-col items-center py-10 relative">
+        <audio autoPlay loop src="/audio/music/porto-das-brumas.mp3" />
+        <img src="/images/logo/sapires-warriors-logo.png" alt="Logo" className="w-64 mb-4" />
+        <VillageScene onLocationClick={handleVillageClick} />
+      </div>
+    );
+  }
+
+  if (gameState === 'transition') {
+    return (
+      <div className="min-h-screen bg-black">
+        <MapTransition 
+          isVisible={true} 
+          destinationName={destination} 
+          onTransitionComplete={startGame} 
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+      </div>
+    );
+  }
+
+  const currentActorId = turnOrder[currentTurnIndex];
+  const currentHero = activeHeroes.find(h => h.id === currentActorId);
+
+  return (
+    <main className="min-h-screen flex flex-col bg-[url('/images/backgrounds/ruas-em-chamas.png')] bg-cover bg-center relative overflow-hidden">
+      <div className="absolute inset-0 bg-black/50" />
+      
+      {/* Audio Theme */}
+      <audio autoPlay loop src="/audio/music/battle-theme.mp3" />
+
+      {/* Main Battle Area */}
+      <div className="flex-1 flex w-full relative z-10">
+        <InventoryPanel />
+        <BattleScene 
+          heroes={activeHeroes}
+          enemies={activeEnemies}
+          activeCharacterId={currentActorId}
+        />
+        
+        {/* Right Sidebar - Battle Log */}
+        <div className="w-80 h-full border-l border-border bg-background/50 backdrop-blur-md hidden lg:block">
+          <BattleLog logs={logs} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </div>
+
+      {/* Action Panel (Bottom) */}
+      <div className="h-40 relative z-20 w-full">
+        {currentHero ? (
+          <ActionPanel 
+            hero={currentHero} 
+            onAction={handleAction} 
+            disabled={isRolling || !!diceResult}
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center bg-secondary/50 backdrop-blur-md border-t border-border">
+            <span className="text-xl text-muted-foreground animate-pulse">Turno Inimigo...</span>
+          </div>
+        )}
+      </div>
+
+      <DiceRoller result={diceResult} isRolling={isRolling} />
+      <ChatPanel />
+
+      {/* Turn Banner */}
+      {showTurnBanner && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in slide-in-from-top-10 fade-in duration-500">
+          <div className="bg-green-900/90 border-2 border-green-400 px-10 py-4 rounded-full shadow-[0_0_30px_rgba(74,222,128,0.8)] backdrop-blur-md">
+            <h2 className="text-3xl font-black text-white uppercase tracking-widest animate-pulse">É A SUA VEZ!</h2>
+          </div>
         </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
