@@ -123,7 +123,11 @@ export default function Lobby() {
             <img 
               src={heroes[carouselIndex].fullImage} 
               alt={heroes[carouselIndex].name} 
-              className="w-full h-full object-contain pointer-events-none"
+              className={`w-full h-full object-contain pointer-events-none transition-all duration-500 ${
+                activePlayers.some(p => p.hero_id === heroes[carouselIndex].id && p.email !== user?.email)
+                  ? 'grayscale opacity-40 blur-sm'
+                  : ''
+              }`}
             />
             
             {/* Carousel Controls */}
@@ -153,16 +157,21 @@ export default function Lobby() {
 
             {/* Neon Golden Select Button overlayed on the image */}
             <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-[80%] flex flex-col gap-4">
-              <button 
-                onClick={() => handleSelectHero(heroes[carouselIndex].id)}
-                className={`w-full py-4 text-transparent font-bold uppercase tracking-widest rounded-xl transition-all duration-300 border-4 relative overflow-hidden group
-                  ${selectedHeroId === heroes[carouselIndex].id ? 'border-green-400 shadow-[0_0_40px_rgba(74,222,128,0.9)] bg-green-500/20' : 'border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.8)] hover:shadow-[0_0_50px_rgba(250,204,21,1)] bg-transparent'}`}
-              >
-                {/* The text is rendered via inset shadow/glow on the border, but we need text to see it, so we color it neon */}
-                <span className={`relative z-10 text-2xl font-black ${selectedHeroId === heroes[carouselIndex].id ? 'text-green-300 drop-shadow-[0_0_10px_rgba(74,222,128,1)]' : 'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,1)]'}`}>
-                  {selectedHeroId === heroes[carouselIndex].id ? 'HERÓI VINCULADO!' : 'ESCOLHER'}
-                </span>
-              </button>
+              {activePlayers.some(p => p.hero_id === heroes[carouselIndex].id && p.email !== user?.email) ? (
+                <div className="w-full py-4 bg-black/80 text-red-500 border border-red-900 rounded-xl text-center font-bold uppercase tracking-widest text-sm shadow-[0_0_15px_rgba(255,0,0,0.5)]">
+                  Bloqueado (Em uso)
+                </div>
+              ) : (
+                <button 
+                  onClick={() => handleSelectHero(heroes[carouselIndex].id)}
+                  className={`w-full py-4 text-transparent font-bold uppercase tracking-widest rounded-xl transition-all duration-300 border-4 relative overflow-hidden group
+                    ${selectedHeroId === heroes[carouselIndex].id ? 'border-green-400 shadow-[0_0_40px_rgba(74,222,128,0.9)] bg-green-500/20' : 'border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.8)] hover:shadow-[0_0_50px_rgba(250,204,21,1)] bg-transparent'}`}
+                >
+                  <span className={`relative z-10 text-2xl font-black ${selectedHeroId === heroes[carouselIndex].id ? 'text-green-300 drop-shadow-[0_0_10px_rgba(74,222,128,1)]' : 'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,1)]'}`}>
+                    {selectedHeroId === heroes[carouselIndex].id ? 'HERÓI VINCULADO!' : 'ESCOLHER'}
+                  </span>
+                </button>
+              )}
               
               {selectedHeroId === heroes[carouselIndex].id && (
                 <button 

@@ -11,6 +11,7 @@ interface ActionPanelProps {
 
 export function ActionPanel({ hero, onAction, disabled }: ActionPanelProps) {
   const [clickedAction, setClickedAction] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
 
   const handleActionClick = (actionId: string, actionName?: string) => {
     if (disabled) return;
@@ -23,8 +24,17 @@ export function ActionPanel({ hero, onAction, disabled }: ActionPanelProps) {
   };
 
   return (
-    <div className="bg-secondary/50 p-4 border-t border-border mt-auto backdrop-blur-md">
-      <h3 className="text-primary font-bold mb-3">{hero.name} - Suas Ações</h3>
+    <div className="bg-secondary/50 p-4 border-t border-border mt-auto backdrop-blur-md relative">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-primary font-bold text-lg">{hero.name} - Suas Ações</h3>
+        <button 
+          onClick={() => setShowInfo(true)}
+          className="flex items-center gap-2 px-3 py-1 bg-sapires-dark/80 border border-primary/50 rounded-full text-primary hover:bg-primary/20 hover:text-yellow-400 transition-colors text-xs uppercase font-bold tracking-widest"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          Ficha do Herói
+        </button>
+      </div>
       <div className="flex flex-wrap gap-4">
         <button 
           onClick={() => handleActionClick('attack')} 
@@ -73,6 +83,58 @@ export function ActionPanel({ hero, onAction, disabled }: ActionPanelProps) {
           <span className="relative z-10">{clickedAction === 'defend' ? 'DEFENDENDO!!!' : 'DEFENDER'}</span>
         </button>
       </div>
+
+      {showInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-sapires-dark/95 border-2 border-primary/50 w-full max-w-md rounded-2xl p-6 shadow-[0_0_50px_rgba(197,168,128,0.2)] animate-in zoom-in-95">
+            <div className="flex justify-between items-start border-b border-border pb-4 mb-4">
+              <div>
+                <h2 className="text-2xl font-black text-primary uppercase tracking-widest">{hero.name}</h2>
+                <p className="text-muted-foreground text-sm uppercase tracking-wider">{hero.class} - Nível {hero.level}</p>
+              </div>
+              <button onClick={() => setShowInfo(false)} className="text-muted-foreground hover:text-red-400 p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <span className="text-xs text-muted-foreground block mb-1 uppercase tracking-widest">Atributos</span>
+                <ul className="text-sm font-bold text-foreground space-y-1">
+                  <li><span className="text-red-400">Força:</span> {hero.attributes.forca}</li>
+                  <li><span className="text-green-400">Agilidade:</span> {hero.attributes.agilidade}</li>
+                  <li><span className="text-blue-400">Inteligência:</span> {hero.attributes.inteligencia}</li>
+                  <li><span className="text-purple-400">Espírito:</span> {hero.attributes.espirito}</li>
+                  <li><span className="text-yellow-400">Defesa:</span> {hero.attributes.defesa}</li>
+                  <li><span className="text-cyan-400">Velocidade:</span> {hero.attributes.velocidade}</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-background p-3 rounded-lg border border-border">
+                  <span className="text-xs text-muted-foreground block mb-1 uppercase tracking-widest">Equipamento</span>
+                  <ul className="text-sm font-bold text-foreground">
+                    {hero.equipment.map((eq, i) => <li key={i}>{eq}</li>)}
+                  </ul>
+                </div>
+                
+                <div className="bg-primary/10 p-3 rounded-lg border border-primary/30">
+                  <span className="text-xs text-primary block mb-1 uppercase tracking-widest">Passiva</span>
+                  <p className="text-sm font-bold text-foreground">{hero.passive.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{hero.passive.description}</p>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setShowInfo(false)}
+              className="w-full py-3 bg-primary text-primary-foreground font-bold uppercase tracking-widest rounded-lg hover:bg-primary/80 transition-colors"
+            >
+              Fechar Ficha
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
