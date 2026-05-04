@@ -10,6 +10,7 @@ export default function Lobby() {
   const [activePlayers, setActivePlayers] = useState<any[]>([]);
   const [selectedHeroId, setSelectedHeroId] = useState<string>('');
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [lobbyChannel, setLobbyChannel] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -24,35 +25,49 @@ export default function Lobby() {
     checkUser();
 
     // Setup Realtime Presence for Lobby
-    const channel = supabase.channel('room_1', {
-      config: { presence: { key: 'player' } },
+    const newChannel = supabase.channel('room_1', {
+      config: { presence: { key: user?.id || Math.random().toString() } },
     });
 
-    channel.on('presence', { event: 'sync' }, () => {
-      const newState = channel.presenceState();
-      const players = Object.values(newState).flat();
-      setActivePlayers(players);
+    newChannel.on('presence', { event: 'sync' }, () => {
+      const newState = newChannel.presenceState();
+      const players = Object.values(newState).flat() as any[];
+      
+      // Remove possíveis duplicações de conexão da mesma conta
+      const uniquePlayers: any[] = [];
+      const seenEmails = new Set();
+      for (const p of players) {
+        if (p.email && !seenEmails.has(p.email)) {
+          seenEmails.add(p.email);
+          uniquePlayers.push(p);
+        }
+      }
+      setActivePlayers(uniquePlayers);
     }).subscribe(async (status) => {
       if (status === 'SUBSCRIBED' && user) {
-        await channel.track({ 
+        const storedHero = localStorage.getItem('my_hero_id') || '';
+        if (storedHero) setSelectedHeroId(storedHero);
+        
+        await newChannel.track({ 
           user_id: user.id, 
           email: user.email,
-          hero_id: selectedHeroId,
+          hero_id: storedHero,
           status: 'ready'
         });
       }
     });
 
+    setLobbyChannel(newChannel);
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(newChannel);
     };
-  }, [user?.id, router, selectedHeroId]);
+  }, [user?.id]); // Removida dependência de selectedHeroId para não reconectar a cada clique
 
   const handleSelectHero = async (heroId: string) => {
     setSelectedHeroId(heroId);
-    if (user) {
-      const channel = supabase.channel('room_1');
-      await channel.track({ 
+    if (user && lobbyChannel) {
+      await lobbyChannel.track({ 
         user_id: user.id, 
         email: user.email,
         hero_id: heroId,
@@ -119,11 +134,11 @@ export default function Lobby() {
 
           <h2 className="text-lg font-bold text-primary mb-4 text-center border-t border-border/50 pt-4">Escolha seu Herói para esta Jornada:</h2>
           
-          <div className="relative w-full max-w-[400px] mx-auto h-[600px] rounded-2xl border border-primary/20 bg-black/50 overflow-hidden shadow-2xl flex items-center justify-center">
+          <div className="relative w-full max-w-[900px] mx-auto aspect-[16/9] md:aspect-[21/9] rounded-2xl border border-primary/20 bg-black/50 overflow-hidden shadow-2xl flex items-center justify-center">
             <img 
               src={heroes[carouselIndex].fullImage} 
               alt={heroes[carouselIndex].name} 
-              className={`w-full h-full object-contain pointer-events-none transition-all duration-500 ${
+              className={`w-full h-full object-cover md:object-contain pointer-events-none transition-all duration-500 ${
                 activePlayers.some(p => p.hero_id === heroes[carouselIndex].id && p.email !== user?.email)
                   ? 'grayscale opacity-40 blur-sm'
                   : ''
@@ -176,9 +191,9 @@ export default function Lobby() {
               {selectedHeroId === heroes[carouselIndex].id && (
                 <button 
                   onClick={joinMatch}
-                  className="w-full px-10 py-4 bg-primary text-primary-foreground text-xl font-bold uppercase tracking-widest rounded-lg hover:bg-primary/80 transition-transform hover:scale-105 shadow-[0_0_20px_rgba(197,168,128,0.4)] animate-bounce"
+                  className="w-full px-10 py-5 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-black text-2xl font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(250,204,21,0.6)] hover:shadow-[0_0_50px_rgba(250,204,21,0.9)] animate-pulse border-2 border-yellow-200"
                 >
-                  Ir para o Mapa
+                  IR PARA O MAPA
                 </button>
               )}
             </div>

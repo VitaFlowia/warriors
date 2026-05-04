@@ -23,14 +23,33 @@ export default function Login() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      setError('Credenciais inválidas. Tente novamente.');
-      setLoading(false);
+    if (signInError) {
+      if (signInError.message.includes('Invalid login credentials')) {
+        // Fallback: Tentativa de Cadastro (Sign Up) automático se não existir
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { display_name: name }
+          }
+        });
+
+        if (signUpError) {
+          setError('Erro ao cadastrar: ' + signUpError.message);
+          setLoading(false);
+        } else {
+          localStorage.setItem('my_name', name);
+          router.push('/lobby');
+        }
+      } else {
+        setError('Erro no acesso: ' + signInError.message);
+        setLoading(false);
+      }
     } else {
       localStorage.setItem('my_name', name);
       router.push('/lobby');
@@ -86,9 +105,9 @@ export default function Login() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-3 mt-4 bg-primary text-primary-foreground font-bold uppercase tracking-wider rounded hover:bg-primary/80 transition-colors disabled:opacity-50"
+            className="w-full py-5 mt-8 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-black font-black text-2xl uppercase tracking-widest rounded-xl transition-all duration-300 shadow-[0_0_40px_rgba(250,204,21,0.6)] hover:shadow-[0_0_60px_rgba(250,204,21,0.9)] hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse border-2 border-yellow-200"
           >
-            {loading ? 'Adentrando as Brumas...' : 'Entrar na Partida'}
+            {loading ? 'ADENTRANDO...' : 'ENTRAR NA PARTIDA'}
           </button>
         </form>
       </div>

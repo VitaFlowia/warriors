@@ -23,7 +23,7 @@ type GameState = 'intro' | 'menu' | 'village' | 'transition' | 'battle';
 
 export default function Home() {
   const router = useRouter();
-  const [gameState, setGameState] = useState<GameState>('intro');
+  const [gameState, setGameState] = useState<GameState | 'loading'>('loading');
   const [destination, setDestination] = useState<string>('');
   const [activeHeroes, setActiveHeroes] = useState<Hero[]>([]);
   const [activeEnemies, setActiveEnemies] = useState<{enemy: Enemy, currentHp: number}[]>([]);
@@ -46,7 +46,27 @@ export default function Home() {
   useEffect(() => {
     // Only access localStorage on client
     if (typeof window !== 'undefined') {
-      setMyHeroId(localStorage.getItem('my_hero_id'));
+      const heroId = localStorage.getItem('my_hero_id');
+      if (heroId) {
+        setMyHeroId(heroId);
+        // Start battle immediately if coming from lobby
+        setGameState('battle');
+        const selectedHeroes = heroes.slice(0, 4);
+        const selectedEnemies = [
+          { enemy: { ...enemies[0], id: 'goblin-1' }, currentHp: enemies[0].maxHp },
+          { enemy: { ...enemies[0], id: 'goblin-2' }, currentHp: enemies[0].maxHp },
+          { enemy: { ...enemies[0], id: 'goblin-3' }, currentHp: enemies[0].maxHp },
+        ];
+        
+        setActiveHeroes(selectedHeroes);
+        setActiveEnemies(selectedEnemies);
+        
+        const order = [...selectedHeroes.map(h => h.id), ...selectedEnemies.map(e => e.enemy.id)];
+        setTurnOrder(order);
+        setCurrentTurnIndex(0);
+      } else {
+        setGameState('intro');
+      }
     }
   }, []);
 
@@ -81,7 +101,6 @@ export default function Home() {
 
   const startGame = () => {
     setGameState('battle');
-    // MVP: Select 4 heroes and 3 Goblins
     const selectedHeroes = heroes.slice(0, 4);
     const selectedEnemies = [
       { enemy: { ...enemies[0], id: 'goblin-1' }, currentHp: enemies[0].maxHp },
@@ -344,6 +363,10 @@ export default function Home() {
       }
     }
   }, [currentTurnIndex, gameState, myHeroId]);
+
+  if (gameState === 'loading') {
+    return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
+  }
 
   if (gameState === 'intro') {
     return <IntroVideo onComplete={() => router.push('/login')} />;
