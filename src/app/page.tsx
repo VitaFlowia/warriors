@@ -49,19 +49,21 @@ export default function Home() {
       const heroId = localStorage.getItem('my_hero_id');
       if (heroId) {
         setMyHeroId(heroId);
-        // Start battle immediately if coming from lobby
-        setGameState('battle');
-        const selectedHeroes = heroes.slice(0, 4);
-        const selectedEnemies = [
+        // Start at the village (The Map) after lobby
+        setGameState('village');
+        
+        // Prepare all 7 heroes for the session
+        const allHeroes = heroes.slice(0, 7);
+        const initialEnemies = [
           { enemy: { ...enemies[0], id: 'goblin-1' }, currentHp: enemies[0].maxHp },
           { enemy: { ...enemies[0], id: 'goblin-2' }, currentHp: enemies[0].maxHp },
           { enemy: { ...enemies[0], id: 'goblin-3' }, currentHp: enemies[0].maxHp },
         ];
         
-        setActiveHeroes(selectedHeroes);
-        setActiveEnemies(selectedEnemies);
+        setActiveHeroes(allHeroes);
+        setActiveEnemies(initialEnemies);
         
-        const order = [...selectedHeroes.map(h => h.id), ...selectedEnemies.map(e => e.enemy.id)];
+        const order = [...allHeroes.map(h => h.id), ...initialEnemies.map(e => e.enemy.id)];
         setTurnOrder(order);
         setCurrentTurnIndex(0);
       } else {
@@ -101,20 +103,6 @@ export default function Home() {
 
   const startGame = () => {
     setGameState('battle');
-    const selectedHeroes = heroes.slice(0, 4);
-    const selectedEnemies = [
-      { enemy: { ...enemies[0], id: 'goblin-1' }, currentHp: enemies[0].maxHp },
-      { enemy: { ...enemies[0], id: 'goblin-2' }, currentHp: enemies[0].maxHp },
-      { enemy: { ...enemies[0], id: 'goblin-3' }, currentHp: enemies[0].maxHp },
-    ];
-    
-    setActiveHeroes(selectedHeroes);
-    setActiveEnemies(selectedEnemies);
-    
-    const order = [...selectedHeroes.map(h => h.id), ...selectedEnemies.map(e => e.enemy.id)];
-    setTurnOrder(order);
-    setCurrentTurnIndex(0);
-    
     addLog('A batalha em Ruas em Chamas começou!', 'system');
   };
 
