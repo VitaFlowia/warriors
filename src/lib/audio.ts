@@ -70,3 +70,33 @@ export function playTurnSound() {
     console.log('Audio not supported or disabled', e);
   }
 }
+
+let currentAudio: HTMLAudioElement | null = null;
+
+export async function speakText(text: string, voiceKey: string = 'system') {
+  try {
+    const response = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voiceKey })
+    });
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+    if (data.audioContent) {
+      // Se houver um áudio tocando, para ele antes de começar o novo
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+
+      const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+      currentAudio = audio;
+      await audio.play();
+    }
+  } catch (error) {
+    console.error('Error in speakText:', error);
+  }
+}
+

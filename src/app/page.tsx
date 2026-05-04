@@ -12,7 +12,7 @@ import { heroes, Hero } from '@/data/heroes';
 import { enemies, Enemy } from '@/data/enemies';
 import { executeAttack, CombatResult } from '@/game-engine/combat';
 import { DiceResult } from '@/game-engine/dice';
-import { playTurnSound } from '@/lib/audio';
+import { playTurnSound, speakText } from '@/lib/audio';
 
 import { VillageScene } from '@/components/game/VillageScene';
 import { MapTransition } from '@/components/game/MapTransition';
@@ -83,8 +83,12 @@ export default function Home() {
     }
   }, [currentTurnIndex, gameState, myHeroId, turnOrder]);
 
-  const addLog = (message: string, type: LogEntry['type']) => {
+  const addLog = (message: string, type: LogEntry['type'], voiceKey: string = 'system') => {
     setLogs(prev => [...prev, { id: Math.random().toString(), message, type, timestamp: new Date() }]);
+    // Narra automaticamente logs do tipo narrativa ou sistema (início de batalha, etc)
+    if (type === 'narrative' || type === 'system') {
+      speakText(message, voiceKey);
+    }
   };
 
   const enterVillage = () => {
@@ -116,11 +120,12 @@ export default function Home() {
     if (aliveEnemies.length === 0) return;
     const target = aliveEnemies[0];
 
-    addLog(`${actor.name} prepara ${skillName || 'um ataque'} contra ${target.enemy.name}...`, 'narrative');
+    addLog(`${actor.name} prepara ${skillName || 'um ataque'} contra ${target.enemy.name}...`, 'narrative', actor.id);
 
     // Se for o jogador atual, abre o dado interativo 3D
     if (actorId === myHeroId) {
       setPendingAction({
+        actorId: actor.id,
         actor: actor.name,
         target: target.enemy.name,
         attributeBonus: actor.attributes.forca,
@@ -173,7 +178,7 @@ export default function Home() {
       .then(res => res.json())
       .then(data => {
         if (data.narrative) {
-          addLog(data.narrative, 'narrative');
+          addLog(data.narrative, 'narrative', actorId);
         }
       })
       .catch(console.error);
@@ -214,7 +219,7 @@ export default function Home() {
         body: JSON.stringify({ actionContext: result.logMessage })
       })
       .then(res => res.json())
-      .then(data => { if (data.narrative) addLog(data.narrative, 'narrative'); })
+      .then(data => { if (data.narrative) addLog(data.narrative, 'narrative', pendingAction.actorId); })
       .catch(console.error);
 
       nextTurn();
@@ -282,7 +287,7 @@ export default function Home() {
           .then(res => res.json())
           .then(data => {
             if (data.narrative) {
-              addLog(data.narrative, 'narrative');
+              addLog(data.narrative, 'narrative', 'system'); // Inimigos usam voz do narrador
             }
           })
           .catch(console.error);
@@ -306,7 +311,7 @@ export default function Home() {
         const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
 
         setTimeout(async () => {
-          addLog(`${hero.name} (Modo Fantasma) avança contra ${target.enemy.name}...`, 'narrative');
+          addLog(`${hero.name} (Modo Fantasma) avança contra ${target.enemy.name}...`, 'narrative', hero.id);
           
           setIsRolling(true);
           setDiceResult(null);
@@ -341,7 +346,7 @@ export default function Home() {
               body: JSON.stringify({ actionContext: result.logMessage })
             })
             .then(res => res.json())
-            .then(data => { if (data.narrative) addLog(data.narrative, 'narrative'); })
+            .then(data => { if (data.narrative) addLog(data.narrative, 'narrative', actorId); })
             .catch(console.error);
 
             nextTurn();
