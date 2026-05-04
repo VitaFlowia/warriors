@@ -25,9 +25,10 @@ export function IntroVideo({ onComplete }: IntroVideoProps) {
     <div className="fixed inset-0 z-50 bg-black flex items-center justify-center border-4 border-yellow-600/50 shadow-[inset_0_0_50px_rgba(202,138,4,0.5)] overflow-hidden">
       <video 
         ref={videoRef}
-        src="/intro.mp4" 
+        src="/Intro.mp4" 
         className="w-full h-full object-cover pointer-events-none"
         onEnded={onComplete}
+        onError={onComplete}
         playsInline
       />
 
