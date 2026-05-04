@@ -19,6 +19,7 @@ import { VillageScene } from '@/components/game/VillageScene';
 import { MapTransition } from '@/components/game/MapTransition';
 import { ChatPanel } from '@/components/game/ChatPanel';
 import { InventoryPanel } from '@/components/game/InventoryPanel';
+import { PWAInstall } from '@/components/game/PWAInstall';
 
 type GameState = 'intro' | 'menu' | 'village' | 'transition' | 'battle';
 
@@ -465,6 +466,7 @@ export default function Home() {
           <BattleLog logs={logs} />
         </div>
       </div>
+      <PWAInstall />
 
       {/* Action Panel (Bottom) */}
       <div className="h-40 relative z-20 w-full">
