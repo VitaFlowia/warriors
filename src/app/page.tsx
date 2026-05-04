@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 import { IntroVideo } from '@/components/game/IntroVideo';
 import { BattleScene } from '@/components/game/BattleScene';
 import { ActionPanel } from '@/components/game/ActionPanel';
@@ -42,33 +43,47 @@ export default function Home() {
   const [showTurnBanner, setShowTurnBanner] = useState(false);
   const [pendingAction, setPendingAction] = useState<any>(null);
   const [isInteractiveRolling, setIsInteractiveRolling] = useState(false);
+  const [broadcastChannel, setBroadcastChannel] = useState<any>(null);
 
   useEffect(() => {
-    // Only access localStorage on client
+    // Only access localStorage and Supabase on client
     if (typeof window !== 'undefined') {
-      const heroId = localStorage.getItem('my_hero_id');
-      if (heroId) {
-        setMyHeroId(heroId);
-        // Start at the village (The Map) after lobby
-        setGameState('village');
+      const validateSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        const heroId = localStorage.getItem('my_hero_id');
         
-        // Prepare all 7 heroes for the session
-        const allHeroes = heroes.slice(0, 7);
-        const initialEnemies = [
-          { enemy: { ...enemies[0], id: 'goblin-1' }, currentHp: enemies[0].maxHp },
-          { enemy: { ...enemies[0], id: 'goblin-2' }, currentHp: enemies[0].maxHp },
-          { enemy: { ...enemies[0], id: 'goblin-3' }, currentHp: enemies[0].maxHp },
-        ];
-        
-        setActiveHeroes(allHeroes);
-        setActiveEnemies(initialEnemies);
-        
-        const order = [...allHeroes.map(h => h.id), ...initialEnemies.map(e => e.enemy.id)];
-        setTurnOrder(order);
-        setCurrentTurnIndex(0);
-      } else {
-        setGameState('intro');
-      }
+        if (session && heroId) {
+          setMyHeroId(heroId);
+          // Start at the village (The Map) after lobby
+          setGameState('village');
+
+          // Setup Broadcast Channel for shouts and sync
+          const channel = supabase.channel('battle_room_1');
+          channel.on('broadcast', { event: 'shout' }, ({ payload }) => {
+            addLog(payload.message, 'narrative', payload.heroId);
+          }).subscribe();
+          setBroadcastChannel(channel);
+          
+          const allHeroes = heroes.slice(0, 7);
+          const initialEnemies = [
+            { enemy: { ...enemies[0], id: 'goblin-1' }, currentHp: enemies[0].maxHp },
+            { enemy: { ...enemies[0], id: 'goblin-2' }, currentHp: enemies[0].maxHp },
+            { enemy: { ...enemies[0], id: 'goblin-3' }, currentHp: enemies[0].maxHp },
+          ];
+          
+          setActiveHeroes(allHeroes);
+          setActiveEnemies(initialEnemies);
+          
+          const order = [...allHeroes.map(h => h.id), ...initialEnemies.map(e => e.enemy.id)];
+          setTurnOrder(order);
+          setCurrentTurnIndex(0);
+        } else {
+          // Se não houver sessão ou herói, volta para a intro -> login
+          setGameState('intro');
+        }
+      };
+      
+      validateSession();
     }
   }, []);
 
@@ -357,6 +372,28 @@ export default function Home() {
     }
   }, [currentTurnIndex, gameState, myHeroId]);
 
+  const handleRequestHelp = (heroName: string, heroId: string) => {
+    const messages = [
+      `Ei, preciso de ajuda aqui! [sigh] Minha vida está baixa!`,
+      `Alguém pode me dar uma mão? [short pause] Estou cercado!`,
+      `Preciso de suprimentos agora mesmo!`,
+      `Não sei se aguento mais muito tempo... [medium pause] Ajuda!!`
+    ];
+    const message = `${heroName}: ${messages[Math.floor(Math.random() * messages.length)]}`;
+    
+    // Play locally
+    addLog(message, 'narrative', heroId);
+    
+    // Broadcast to others
+    if (broadcastChannel) {
+      broadcastChannel.send({
+        type: 'broadcast',
+        event: 'shout',
+        payload: { message, heroId }
+      });
+    }
+  };
+
   if (gameState === 'loading') {
     return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
   }
@@ -435,6 +472,7 @@ export default function Home() {
           <ActionPanel 
             hero={currentHero} 
             onAction={handleAction} 
+            onRequestHelp={handleRequestHelp}
             disabled={isRolling || !!diceResult}
           />
         ) : (

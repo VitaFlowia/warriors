@@ -6,10 +6,11 @@ import { Hero } from '@/data/heroes';
 interface ActionPanelProps {
   hero: Hero;
   onAction: (actionType: string, skillName?: string) => void;
+  onRequestHelp: (heroName: string, heroId: string) => void;
   disabled?: boolean;
 }
 
-export function ActionPanel({ hero, onAction, disabled }: ActionPanelProps) {
+export function ActionPanel({ hero, onAction, onRequestHelp, disabled }: ActionPanelProps) {
   const [clickedAction, setClickedAction] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
 
@@ -81,6 +82,15 @@ export function ActionPanel({ hero, onAction, disabled }: ActionPanelProps) {
         >
           {clickedAction !== 'defend' && <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent pointer-events-none" />}
           <span className="relative z-10">{clickedAction === 'defend' ? 'DEFENDENDO!!!' : 'DEFENDER'}</span>
+        </button>
+
+        <button 
+          onClick={() => onRequestHelp(hero.name, hero.id)} 
+          disabled={disabled}
+          className="flex-1 min-w-[120px] py-4 px-4 font-black rounded-xl uppercase tracking-widest text-sm transition-all duration-300 border-2 border-emerald-500 text-emerald-100 bg-emerald-700/60 hover:bg-emerald-600 hover:border-emerald-400 hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(16,185,129,0.8)] active:scale-95 disabled:opacity-40"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/50 to-transparent pointer-events-none" />
+          <span className="relative z-10">PEDIR AJUDA!</span>
         </button>
       </div>
 
