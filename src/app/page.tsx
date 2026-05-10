@@ -670,21 +670,26 @@ export default function Home() {
 
     addLog(`${actor.name} prepara ${skillName || 'um ataque'} contra ${targetName}...`, 'narrative', actor.id);
 
-    // If this is MY hero, open interactive dice
-    if (actorId === myHeroId) {
-      setPendingAction({
-        actorId: actor.id,
-        actor: actor.name,
-        targetId: targetIds.join(','),
-        target: targetName,
-        attributeBonus: attrBonus,
-        weaponDamage: weaponDmg,
-        defenseBonus: targetDefense,
-        skillName: skillName
-      });
-      setIsInteractiveRolling(true);
-      return;
-    }
+    // If this is MY hero, use the new Destiny Card flow
+    setIsRolling(true);
+    setDiceResult(null);
+
+    // Generate result immediately but display after animation
+    const result = executeAttack({
+      actor: actor.name,
+      target: targetName,
+      attributeBonus: attrBonus,
+      weaponDamage: weaponDmg,
+      defenseBonus: targetDefense,
+      skillName: skillName
+    });
+
+    // Wait for the card flip animation (2s) before showing numbers/log
+    setTimeout(() => {
+      processCombatResult(result, true, targetIds, actor.id, PLAYER_RESULT_DISPLAY);
+    }, 2000);
+    return;
+  };
 
     // Fallback for non-interactive
     setIsRolling(true);
@@ -718,32 +723,7 @@ export default function Home() {
     executePreparedAction(actionType, skillName, [targetId]);
   };
 
-  // ============================
-  // INTERACTIVE DICE COMPLETE
-  // ============================
-  const handleInteractiveRollComplete = useCallback((rollValue: number) => {
-    setIsInteractiveRolling(false);
-    
-    if (!pendingAction) {
-      isTurnProcessing.current = false;
-      return;
-    }
-    
-    const result = executeAttack({
-      actor: pendingAction.actor,
-      target: pendingAction.target,
-      attributeBonus: pendingAction.attributeBonus,
-      weaponDamage: pendingAction.weaponDamage,
-      defenseBonus: pendingAction.defenseBonus,
-      preRolledDice: rollValue
-    });
-    
-    const targetId = pendingAction.targetId;
-    const actorId = pendingAction.actorId;
-    setPendingAction(null);
-    
-    processCombatResult(result, true, targetId, actorId, PLAYER_RESULT_DISPLAY);
-  }, [pendingAction, processCombatResult]);
+  // handleInteractiveRollComplete removed in favor of unified DiceRoller flow
 
   // ============================
   // USE POTION
@@ -1287,11 +1267,6 @@ export default function Home() {
             <p className="text-blue-100 font-bold text-sm">{joinNotification}</p>
           </div>
         </div>
-      )}
-
-      {/* 3D Interactive Dice Overlay */}
-      {isInteractiveRolling && (
-        <D20Interactive onRollComplete={handleInteractiveRollComplete} isRolling={false} />
       )}
     </main>
   );
