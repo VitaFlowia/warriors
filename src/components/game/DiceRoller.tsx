@@ -7,50 +7,72 @@ interface DiceRollerProps {
 }
 
 export function DiceRoller({ result, isRolling }: DiceRollerProps) {
-  const [displayValue, setDisplayValue] = useState<number>(20);
+  const [phase, setPhase] = useState<'hidden' | 'suspense' | 'reveal'>('hidden');
 
   useEffect(() => {
     if (isRolling) {
-      const interval = setInterval(() => {
-        setDisplayValue(Math.floor(Math.random() * 20) + 1);
-      }, 50);
-      return () => clearInterval(interval);
+      setPhase('suspense');
     } else if (result) {
-      setDisplayValue(result.roll);
+      setPhase('reveal');
+      const t = setTimeout(() => setPhase('hidden'), 2500); // Esconde a carta após 2.5s
+      return () => clearTimeout(t);
+    } else {
+      setPhase('hidden');
     }
   }, [isRolling, result]);
 
-  if (!isRolling && !result) return null;
+  if (phase === 'hidden') return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none transition-opacity duration-300">
-      <div className={`relative flex flex-col items-center justify-center transform transition-transform duration-500 ${isRolling ? 'scale-110 rotate-12' : 'scale-100 rotate-0'}`}>
-        <div className={`w-32 h-32 flex items-center justify-center rounded-xl bg-gradient-to-br shadow-2xl
-          ${result?.isCriticalSuccess ? 'from-yellow-400 to-yellow-600 shadow-yellow-500/50' : 
-            result?.isCriticalFailure ? 'from-red-600 to-red-900 shadow-red-600/50' : 
-            'from-slate-700 to-slate-900 shadow-primary/30'}
-          border-4 ${result?.isCriticalSuccess ? 'border-yellow-200' : result?.isCriticalFailure ? 'border-red-400' : 'border-primary'}`}
-        >
-          <span className={`text-5xl font-black ${result?.isCriticalSuccess ? 'text-yellow-100' : result?.isCriticalFailure ? 'text-red-100' : 'text-primary'}`}>
-            {displayValue}
-          </span>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] pointer-events-none transition-opacity duration-300 perspective-1000">
+      
+      {/* Fase 1: Carta Virada para Baixo (Suspense) */}
+      {phase === 'suspense' && (
+        <div className="w-48 h-72 rounded-xl bg-[url('/images/backgrounds/card-back.jpg')] bg-cover bg-center border-4 border-yellow-600 shadow-[0_0_40px_rgba(202,138,4,0.6)] animate-flip-in card-idle relative overflow-hidden">
+           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+           <div className="absolute inset-0 border-2 border-yellow-400/50 rounded-lg m-1" />
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+             <div className="w-16 h-16 border-4 border-yellow-500 rounded-full animate-spin border-t-transparent shadow-[0_0_20px_rgba(250,204,21,0.8)]" />
+           </div>
         </div>
-        
-        {!isRolling && result && (
-          <div className="mt-4 text-center bg-background/90 p-3 rounded-lg border border-border shadow-xl">
-            <div className="text-xl font-bold text-foreground">
-              {result.isCriticalSuccess && <span className="text-yellow-500">Acerto Crítico!</span>}
-              {result.isCriticalFailure && <span className="text-red-500">Falha Crítica!</span>}
-              {!result.isCriticalSuccess && !result.isCriticalFailure && (
-                result.success ? <span className="text-green-400">Sucesso</span> : <span className="text-red-400">Falha</span>
-              )}
+      )}
+
+      {/* Fase 2: Carta Revelada (Flip) */}
+      {phase === 'reveal' && result && (
+        <div className={`w-56 h-80 rounded-2xl border-4 shadow-2xl flex flex-col items-center justify-center animate-flip-in relative overflow-hidden
+          ${result.isCriticalSuccess ? 'bg-gradient-to-br from-yellow-500 to-yellow-800 border-yellow-300 shadow-[0_0_80px_rgba(250,204,21,0.8)]' : 
+            result.isCriticalFailure ? 'bg-gradient-to-br from-red-700 to-red-950 border-red-500 shadow-[0_0_80px_rgba(239,68,68,0.8)]' : 
+            'bg-gradient-to-br from-slate-700 to-slate-900 border-blue-400 shadow-[0_0_50px_rgba(59,130,246,0.5)]'}
+        `}>
+          <div className="absolute inset-0 bg-[url('/images/ui/parchment.jpg')] bg-cover opacity-20 mix-blend-overlay" />
+          
+          {/* Efeito de raio de luz */}
+          {(result.isCriticalSuccess || result.success) && <div className="absolute inset-0 light-sweep pointer-events-none" />}
+
+          <div className="relative z-10 text-center px-4">
+            <h3 className="text-sm font-black text-white/80 uppercase tracking-widest mb-2">Destino</h3>
+            
+            <div className={`text-7xl font-black drop-shadow-lg mb-4
+              ${result.isCriticalSuccess ? 'text-yellow-100' : result.isCriticalFailure ? 'text-red-200' : 'text-white'}`}>
+              {result.roll}
             </div>
-            <div className="text-sm text-muted-foreground mt-1">
-              Dado: {result.roll} | Total: {result.total}
+
+            <div className="bg-black/60 rounded-xl p-3 border border-white/20 backdrop-blur-sm w-full">
+              <div className="text-xl font-black uppercase tracking-widest">
+                {result.isCriticalSuccess && <span className="text-yellow-400">Crítico!</span>}
+                {result.isCriticalFailure && <span className="text-red-500">Falha!</span>}
+                {!result.isCriticalSuccess && !result.isCriticalFailure && (
+                  result.success ? <span className="text-green-400">Sucesso</span> : <span className="text-red-400">Erro</span>
+                )}
+              </div>
+              <div className="text-xs text-white/60 mt-1 font-bold">
+                Poder Total: {result.total}
+              </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
     </div>
   );
 }

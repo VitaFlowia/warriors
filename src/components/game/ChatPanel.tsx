@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
+import { playChatNotificationSound, speakChatNotification } from '@/lib/audio';
 
 interface Message {
   id: string;
   sender: string;
+  senderDisplayName: string;
   text: string;
   timestamp: string;
 }
@@ -15,18 +17,34 @@ export function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [user, setUser] = useState<User | null>(null);
+  const [displayName, setDisplayName] = useState<string>('Aventureiro');
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
+      if (data.user) {
+        // Try to get display name from user metadata
+        const meta = data.user.user_metadata;
+        const name = meta?.full_name || meta?.name || meta?.display_name || data.user.email?.split('@')[0] || 'Aventureiro';
+        setDisplayName(name);
+      }
     });
 
     const channel = supabase.channel('game_chat');
     
     channel.on('broadcast', { event: 'new_message' }, (payload) => {
-      setMessages((prev) => [...prev, payload.payload as Message]);
+      const msg = payload.payload as Message;
+      setMessages((prev) => [...prev, msg]);
+      
+      // Play notification sound and TTS for messages from others
+      if (msg.sender !== user?.email) {
+        playChatNotificationSound();
+        speakChatNotification(msg.senderDisplayName);
+        setUnreadCount(prev => prev + 1);
+      }
     }).subscribe();
 
     return () => {
@@ -40,13 +58,21 @@ export function ChatPanel() {
     }
   }, [messages, isOpen]);
 
+  // Clear unread when opening
+  useEffect(() => {
+    if (isOpen) {
+      setUnreadCount(0);
+    }
+  }, [isOpen]);
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || !user) return;
 
     const newMessage: Message = {
       id: Math.random().toString(),
-      sender: user.email?.split('@')[0] || 'Aventureiro',
+      sender: user.email || 'unknown',
+      senderDisplayName: displayName,
       text: input.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -66,9 +92,14 @@ export function ChatPanel() {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 left-4 z-50 bg-primary text-primary-foreground p-3 rounded-full shadow-[0_0_15px_rgba(197,168,128,0.5)] hover:scale-110 transition-transform"
+        className="fixed bottom-4 left-4 z-50 bg-primary text-primary-foreground p-3 rounded-full shadow-[0_0_15px_rgba(197,168,128,0.5)] hover:scale-110 transition-transform relative"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        {unreadCount > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center animate-bounce shadow-lg">
+            {unreadCount}
+          </span>
+        )}
       </button>
     );
   }
@@ -84,9 +115,12 @@ export function ChatPanel() {
       
       <div className="flex-1 overflow-y-auto p-3 space-y-3" ref={scrollRef}>
         {messages.map((msg) => (
-          <div key={msg.id} className={`text-sm ${msg.sender === (user?.email?.split('@')[0] || '') ? 'text-right' : 'text-left'}`}>
-            <span className="block text-xs text-primary/70 mb-1">{msg.sender} <span className="opacity-50 text-[10px]">{msg.timestamp}</span></span>
-            <span className={`inline-block px-3 py-2 rounded-lg ${msg.sender === (user?.email?.split('@')[0] || '') ? 'bg-primary/20 border border-primary/30 text-primary-foreground' : 'bg-secondary border border-border text-foreground'}`}>
+          <div key={msg.id} className={`text-sm ${msg.sender === (user?.email || '') ? 'text-right' : 'text-left'}`}>
+            <span className="block text-xs text-primary/70 mb-1">
+              <span className="font-bold">{msg.senderDisplayName}</span> 
+              <span className="opacity-50 text-[10px] ml-1">{msg.timestamp}</span>
+            </span>
+            <span className={`inline-block px-3 py-2 rounded-lg ${msg.sender === (user?.email || '') ? 'bg-primary/20 border border-primary/30 text-primary-foreground' : 'bg-secondary border border-border text-foreground'}`}>
               {msg.text}
             </span>
           </div>

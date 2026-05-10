@@ -12,6 +12,36 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const handleGuestLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    if (!name.trim()) {
+      setError('Por favor, informe seu Nome para entrar como convidado.');
+      setLoading(false);
+      return;
+    }
+
+    const guestEmail = `guest_${Date.now()}@sapires.com`;
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: guestEmail,
+      password: 'guest_password_123',
+      options: {
+        data: { display_name: name, is_guest: true }
+      }
+    });
+
+    if (signUpError) {
+      setError('Erro ao entrar como convidado: ' + signUpError.message);
+      setLoading(false);
+    } else {
+      localStorage.setItem('my_name', name);
+      localStorage.setItem('is_guest', 'true');
+      router.push('/lobby');
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -35,7 +65,7 @@ export default function Login() {
           email,
           password,
           options: {
-            data: { display_name: name }
+            data: { display_name: name, is_guest: false }
           }
         });
 
@@ -44,6 +74,7 @@ export default function Login() {
           setLoading(false);
         } else {
           localStorage.setItem('my_name', name);
+          localStorage.removeItem('is_guest');
           router.push('/lobby');
         }
       } else {
@@ -52,6 +83,7 @@ export default function Login() {
       }
     } else {
       localStorage.setItem('my_name', name);
+      localStorage.removeItem('is_guest');
       router.push('/lobby');
     }
   };
@@ -102,13 +134,24 @@ export default function Login() {
 
           {error && <p className="text-red-500 text-sm font-bold text-center">{error}</p>}
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full py-5 mt-8 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-black font-black text-2xl uppercase tracking-widest rounded-xl transition-all duration-300 shadow-[0_0_40px_rgba(250,204,21,0.6)] hover:shadow-[0_0_60px_rgba(250,204,21,0.9)] hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse border-2 border-yellow-200"
-          >
-            {loading ? 'ADENTRANDO...' : 'ENTRAR NA PARTIDA'}
-          </button>
+          <div className="flex flex-col gap-4 mt-8">
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full py-5 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-black font-black text-2xl uppercase tracking-widest rounded-xl transition-all duration-300 shadow-[0_0_40px_rgba(250,204,21,0.6)] hover:shadow-[0_0_60px_rgba(250,204,21,0.9)] hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-yellow-200"
+            >
+              {loading ? 'ADENTRANDO...' : 'Entrar (Família)'}
+            </button>
+            
+            <button 
+              type="button" 
+              onClick={handleGuestLogin}
+              disabled={loading}
+              className="w-full py-4 bg-transparent border-2 border-primary text-primary font-black text-xl uppercase tracking-widest rounded-xl hover:bg-primary/20 transition-all shadow-[0_0_15px_rgba(197,168,128,0.2)] hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+            >
+              🎭 Jogar Como Convidado
+            </button>
+          </div>
         </form>
       </div>
     </main>

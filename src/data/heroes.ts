@@ -4,6 +4,7 @@ export type Hero = {
   class: string;
   level: number;
   hp: number;
+  maxHp: number;
   mana: number;
   attributes: {
     forca: number;
@@ -20,6 +21,7 @@ export type Hero = {
   xpNextLevel: number;
   cardImage: string;
   fullImage: string;
+  potionCount: number;
 };
 
 export const heroes: Hero[] = [
@@ -29,6 +31,7 @@ export const heroes: Hero[] = [
     class: 'Guerreiro',
     level: 1,
     hp: 22,
+    maxHp: 22,
     mana: 6,
     attributes: { forca: 4, agilidade: 2, inteligencia: 1, espirito: 1, defesa: 3, velocidade: 2 },
     skills: [
@@ -40,7 +43,8 @@ export const heroes: Hero[] = [
     xp: 0,
     xpNextLevel: 100,
     cardImage: '/images/cards/heroes/rurik-sa-ferro.png',
-    fullImage: '/images/escolher_personagens/Rurik_Sa_Ferro.png'
+    fullImage: '/images/escolher_personagens/Rurik_Sa_Ferro.png',
+    potionCount: 2
   },
   {
     id: 'yara-da-nevoa',
@@ -48,6 +52,7 @@ export const heroes: Hero[] = [
     class: 'Maga',
     level: 1,
     hp: 14,
+    maxHp: 14,
     mana: 18,
     attributes: { forca: 1, agilidade: 2, inteligencia: 4, espirito: 2, defesa: 1, velocidade: 3 },
     skills: [
@@ -59,7 +64,8 @@ export const heroes: Hero[] = [
     xp: 0,
     xpNextLevel: 100,
     cardImage: '/images/cards/heroes/yara-da-nevoa.png',
-    fullImage: '/images/escolher_personagens/Yara_da_Nevoa.png'
+    fullImage: '/images/escolher_personagens/Yara_da_Nevoa.png',
+    potionCount: 2
   },
   {
     id: 'naira-olhos-de-nevoa',
@@ -67,6 +73,7 @@ export const heroes: Hero[] = [
     class: 'Patrulheira',
     level: 1,
     hp: 18,
+    maxHp: 18,
     mana: 10,
     attributes: { forca: 2, agilidade: 4, inteligencia: 2, espirito: 1, defesa: 2, velocidade: 4 },
     skills: [
@@ -78,7 +85,8 @@ export const heroes: Hero[] = [
     xp: 0,
     xpNextLevel: 100,
     cardImage: '/images/cards/heroes/naira-olhos-de-nevoa.png',
-    fullImage: '/images/escolher_personagens/Naira_Olhos_de_Nevoa.png'
+    fullImage: '/images/escolher_personagens/Naira_Olhos_de_Nevoa.png',
+    potionCount: 2
   },
   {
     id: 'irma-joana-de-brumas',
@@ -86,6 +94,7 @@ export const heroes: Hero[] = [
     class: 'Clériga',
     level: 1,
     hp: 16,
+    maxHp: 16,
     mana: 16,
     attributes: { forca: 1, agilidade: 2, inteligencia: 2, espirito: 4, defesa: 2, velocidade: 2 },
     skills: [
@@ -97,7 +106,8 @@ export const heroes: Hero[] = [
     xp: 0,
     xpNextLevel: 100,
     cardImage: '/images/cards/heroes/irma-joana-de-brumas.png',
-    fullImage: '/images/escolher_personagens/Irma_Joana_de_Brunas.png'
+    fullImage: '/images/escolher_personagens/Irma_Joana_de_Brunas.png',
+    potionCount: 2
   },
   {
     id: 'sir-alvaro-lumiar',
@@ -105,6 +115,7 @@ export const heroes: Hero[] = [
     class: 'Paladino',
     level: 1,
     hp: 20,
+    maxHp: 20,
     mana: 12,
     attributes: { forca: 3, agilidade: 2, inteligencia: 1, espirito: 3, defesa: 3, velocidade: 2 },
     skills: [
@@ -116,7 +127,8 @@ export const heroes: Hero[] = [
     xp: 0,
     xpNextLevel: 100,
     cardImage: '/images/cards/heroes/sir-alvaro-lumiar.png',
-    fullImage: '/images/escolher_personagens/Sir_Alvaro_Lumiar.png'
+    fullImage: '/images/escolher_personagens/Sir_Alvaro_Lumiar.png',
+    potionCount: 2
   },
   {
     id: 'vico-sombras',
@@ -124,6 +136,7 @@ export const heroes: Hero[] = [
     class: 'Ladino',
     level: 1,
     hp: 16,
+    maxHp: 16,
     mana: 8,
     attributes: { forca: 2, agilidade: 4, inteligencia: 2, espirito: 1, defesa: 1, velocidade: 4 },
     skills: [
@@ -135,7 +148,8 @@ export const heroes: Hero[] = [
     xp: 0,
     xpNextLevel: 100,
     cardImage: '/images/cards/heroes/vico-sombras.png',
-    fullImage: '/images/escolher_personagens/Vico_Sombras.png'
+    fullImage: '/images/escolher_personagens/Vico_Sombras.png',
+    potionCount: 2
   },
   {
     id: 'sa-leo-das-cancoes',
@@ -143,6 +157,7 @@ export const heroes: Hero[] = [
     class: 'Bardo',
     level: 1,
     hp: 17,
+    maxHp: 17,
     mana: 14,
     attributes: { forca: 1, agilidade: 2, inteligencia: 3, espirito: 3, defesa: 1, velocidade: 3 },
     skills: [
@@ -154,6 +169,7 @@ export const heroes: Hero[] = [
     xp: 0,
     xpNextLevel: 100,
     cardImage: '/images/cards/heroes/sa-leo-das-cancoes.png',
-    fullImage: '/images/escolher_personagens/Sa_Leo_das_Cancoes.png'
+    fullImage: '/images/escolher_personagens/Sa_Leo_das_Cancoes.png',
+    potionCount: 2
   }
 ];
